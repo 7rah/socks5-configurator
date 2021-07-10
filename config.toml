@@ -1,0 +1,7 @@
+socks5 = "192.168.1.1:1080"
+listen =  "127.0.0.1:1080"
+
+[route]
+cidr4.url = "https://txthinking.github.io/bypass/chinacidr4.txt"
+cidr6.url = "https://txthinking.github.io/bypass/chinacidr6.txt"
+domain.url = "https://txthinking.github.io/bypass/chinadomain.txt"
