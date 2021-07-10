@@ -1,0 +1,22 @@
+on: [push]
+name: msvc rust
+
+jobs:
+  windows:
+    name: windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build
+        env:
+          RUSTFLAGS: -C target-cpu=amdfam10
+        run: 
+          cargo build --release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: socks5-configurator.exe
+          path: target/release/socks5-configurator.exe
