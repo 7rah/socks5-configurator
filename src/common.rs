@@ -1,5 +1,4 @@
 use anyhow::Result;
-use log::info;
 use socks5_protocol::Address as Socks5Address;
 use std::{fmt, net::SocketAddr};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -45,7 +44,6 @@ pub async fn copy_tcp<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
     let mut buf = [0u8; 16384 * 3];
     loop {
         let len = r.read(&mut buf).await?;
-        info!("read {}", len);
         if len == 0 {
             break;
         }
