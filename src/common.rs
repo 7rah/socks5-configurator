@@ -1,5 +1,8 @@
+use anyhow::Result;
+use log::info;
 use socks5_protocol::Address as Socks5Address;
 use std::{fmt, net::SocketAddr};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 #[derive(Debug, Clone)]
 pub enum Address {
@@ -33,4 +36,21 @@ impl fmt::Display for Address {
             Address::Domain(ref addr, ref port) => write!(f, "{}:{}", addr, port),
         }
     }
+}
+
+pub async fn copy_tcp<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
+    r: &mut R,
+    w: &mut W,
+) -> Result<()> {
+    let mut buf = [0u8; 16384 * 3];
+    loop {
+        let len = r.read(&mut buf).await?;
+        info!("read {}", len);
+        if len == 0 {
+            break;
+        }
+        w.write(&buf[..len]).await?;
+        w.flush().await?;
+    }
+    Ok(())
 }

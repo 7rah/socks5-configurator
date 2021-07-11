@@ -2,7 +2,7 @@ use anyhow::Result;
 use log::{error, info, LevelFilter};
 use serde_derive::Deserialize;
 use socks5_configurator::{
-    common::Address,
+    common::{self, copy_tcp, Address},
     route::{Router, RouterConfig, Tag},
     socks5::{Socks5Listener, Socks5Stream},
 };
@@ -15,7 +15,7 @@ use std::{
 };
 use structopt::StructOpt;
 use tokio::{
-    io::{copy, split, AsyncWriteExt},
+    io::{split, AsyncWriteExt},
     net::TcpStream,
     spawn,
 };
@@ -104,17 +104,19 @@ async fn serve(
 
     let (mut ri, mut wi) = split(inbound);
     let (mut ro, mut wo) = split(outbound);
-    let inbound_to_outbound = async {
-        copy(&mut ri, &mut wo).await?;
-        wo.shutdown().await
-    };
+    let c1 = common::copy_tcp(&mut ri, &mut wo);
+    let c2 = copy_tcp(&mut ro, &mut wi);
 
-    let outbound_to_inbound = async {
-        copy(&mut ro, &mut wi).await?;
-        wi.shutdown().await
+    let e = tokio::select! {
+        e = c1 => {e}
+        e = c2 => {e}
     };
+    e?;
 
-    tokio::try_join!(inbound_to_outbound, outbound_to_inbound)?;
+    let mut inbound = ri.unsplit(wi);
+    let mut outbound = ro.unsplit(wo);
+    let _ = inbound.shutdown().await;
+    let _ = outbound.shutdown().await;
 
     Ok(())
 }
